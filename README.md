@@ -32,24 +32,22 @@ npm run dev     # http://127.0.0.1:3000/docs, API key is "dev-key" unless set in
 npm test
 ```
 
-## Deploying to Lightsail
+## Deployment
 
-1. Create an instance: Linux/Unix → OS Only → Ubuntu 24.04 LTS, smallest plan.
-2. Networking → create a static IP and attach it.
-3. Firewall: 22 and 80 are open by default. Open 443 too if you add a domain.
-4. SSH in (browser button or `ssh -i LightsailDefaultKey.pem ubuntu@<ip>`) and run:
+Runs on a Lightsail instance (Ubuntu 24.04) with a static IP:
 
-```bash
-git clone https://github.com/tsongjuls0222/node-lightsail-api.git
-bash ~/node-lightsail-api/deploy/setup.sh
-```
+- Node.js 22 from NodeSource
+- PM2 runs the app from `ecosystem.config.js`. `pm2 startup` and `pm2 save` bring it back after a reboot
+- NGINX listens on port 80 and proxies to 127.0.0.1:3000, with per-IP rate limiting
+- The production `.env` (API key) exists only on the server
 
-`setup.sh` installs Node 22, PM2 and NGINX, generates `.env` with a random API key, starts the app under PM2, sets PM2 to start on boot, and installs the NGINX config.
-
-To deploy changes, take a snapshot first, then:
+To deploy changes, take a Lightsail snapshot first, then:
 
 ```bash
-bash ~/node-lightsail-api/deploy/deploy.sh
+cd ~/node-lightsail-api
+git pull
+npm ci --omit=dev
+pm2 reload node-lightsail-api
 ```
 
 ### HTTPS
