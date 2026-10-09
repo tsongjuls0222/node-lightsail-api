@@ -1,12 +1,16 @@
 {
   "name": "node-lightsail-api",
-  "version": "1.0.0",
-  "description": "Production-style Node.js/Express REST API deployed on Amazon Lightsail with PM2 and NGINX",
+  "version": "1.1.0",
+  "description": "Node.js/Express REST API deployed on Amazon Lightsail with PM2 and NGINX",
+  "type": "module",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "test": "node --test"
+    "dev": "node --watch src/server.js | pino-pretty",
+    "test": "node --test \"test/**/*.test.js\"",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "nodejs",
@@ -20,12 +24,21 @@
   "author": "Julius Ablis",
   "license": "MIT",
   "engines": {
-    "node": ">=20.12"
+    "node": ">=22"
   },
   "dependencies": {
     "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
     "swagger-ui-express": "^5.0.1",
     "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "pino-pretty": "^13.2.0",
+    "prettier": "^3.9.9"
   }
 }

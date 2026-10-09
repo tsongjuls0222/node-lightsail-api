@@ -1,24 +1,59 @@
-const config = require('./config');
-const createApp = require('./app');
-const { createTaskStore } = require('./store/taskStore');
+import { createApp } from './app.js';
+import { loadConfig } from './config.js';
+import { createInMemoryTaskRepository } from './modules/tasks/task.repository.js';
+import { seedDemoTasks } from './modules/tasks/task.seed.js';
+import { createLogger } from './shared/logger.js';
 
-const store = createTaskStore();
-store.create({ title: 'Update npm dependencies', status: 'done' });
-store.create({ title: 'Review open pull requests', status: 'in_progress' });
-store.create({ title: 'Move task store to MySQL', status: 'todo' });
+const SHUTDOWN_TIMEOUT_MS = 4_000;
 
-const app = createApp({ store, apiKey: config.apiKey });
+async function main() {
+  try {
+    process.loadEnvFile();
+  } catch {
+    // no .env file, use the real environment
+  }
 
-const server = app.listen(config.port, '127.0.0.1', () => {
-  console.log(`API listening on http://127.0.0.1:${config.port} (${config.env})`);
-});
+  const config = loadConfig();
+  const logger = createLogger(config);
 
+  for (const event of ['unhandledRejection', 'uncaughtException']) {
+    process.on(event, (err) => {
+      logger.fatal({ err }, event);
+      process.exit(1);
+    });
+  }
 
-function shutdown(signal) {
-  console.log(`${signal} received, shutting down`);
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(1), 4_000).unref();
+  const taskRepository = createInMemoryTaskRepository();
+  await seedDemoTasks(taskRepository);
+
+  const app = createApp({ config, logger, taskRepository });
+  const server = app.listen(config.port, config.host, (err) => {
+    if (err) {
+      logger.fatal({ err }, 'server failed to start');
+      process.exit(1);
+    }
+    logger.info({ host: config.host, port: config.port, env: config.env }, 'server listening');
+  });
+
+  // Longer than nginx's upstream keepalive_timeout (60s), so nginx never reuses
+  // a connection that Node has just closed (which shows up as random 502s).
+  server.keepAliveTimeout = 65_000;
+  server.headersTimeout = 66_000;
+
+  let shuttingDown = false;
+  const shutdown = (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info({ signal }, 'shutting down');
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), SHUTDOWN_TIMEOUT_MS).unref();
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
