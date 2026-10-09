@@ -20,7 +20,11 @@ export function createApp({ config, logger, taskRepository }) {
   app.set('trust proxy', 1); // nginx in front, so req.ip is the real client
   app.disable('x-powered-by');
 
-  app.use(helmet({ contentSecurityPolicy: { directives: { upgradeInsecureRequests: null } } }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: { directives: { upgradeInsecureRequests: config.isProduction ? [] : null } },
+    }),
+  );
   app.use(httpLogger(logger));
   app.use(express.json({ limit: '100kb' }));
 

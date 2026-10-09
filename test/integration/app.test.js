@@ -20,11 +20,27 @@ describe('app', () => {
     assert.match(body.version, /^\d+\.\d+\.\d+$/);
   });
 
-  it('serves the API docs over plain http', async () => {
+  it('serves the API docs', async () => {
     const res = await api.request('GET', '/docs/');
     assert.equal(res.status, 200);
     assert.match(await res.text(), /swagger-ui/i);
-    assert.doesNotMatch(res.headers.get('content-security-policy'), /upgrade-insecure-requests/);
+  });
+
+  describe('content security policy', () => {
+    it('makes browsers upgrade insecure requests in production', async () => {
+      const prod = await startTestServer({ isProduction: true });
+      try {
+        const res = await prod.request('GET', '/docs/');
+        assert.match(res.headers.get('content-security-policy'), /upgrade-insecure-requests/);
+      } finally {
+        await prod.close();
+      }
+    });
+
+    it('leaves it off in development so /docs works over plain http', async () => {
+      const res = await api.request('GET', '/docs/');
+      assert.doesNotMatch(res.headers.get('content-security-policy'), /upgrade-insecure-requests/);
+    });
   });
 
   it('returns a JSON 404 for unknown routes', async () => {

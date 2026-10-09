@@ -6,9 +6,9 @@ import { createLogger } from '../../src/shared/logger.js';
 
 export const TEST_API_KEY = 'test-key';
 
-export async function startTestServer() {
+export async function startTestServer(configOverrides = {}) {
   const app = createApp({
-    config: { apiKey: TEST_API_KEY },
+    config: { apiKey: TEST_API_KEY, isProduction: false, ...configOverrides },
     logger: createLogger({ logLevel: 'silent' }),
     taskRepository: createInMemoryTaskRepository(),
   });
