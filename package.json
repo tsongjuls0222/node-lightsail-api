@@ -1,0 +1,31 @@
+{
+  "name": "node-lightsail-api",
+  "version": "1.0.0",
+  "description": "Production-style Node.js/Express REST API deployed on Amazon Lightsail with PM2 and NGINX",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "rest-api",
+    "aws",
+    "lightsail",
+    "pm2",
+    "nginx"
+  ],
+  "author": "Julius Ablis",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "swagger-ui-express": "^5.0.1",
+    "zod": "^4.6.5"
+  }
+}
