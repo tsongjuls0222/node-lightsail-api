@@ -2,11 +2,11 @@
 
 Small Express REST API running on an AWS Lightsail instance, with PM2 keeping it up and NGINX in front as a reverse proxy.
 
-Live: `http://<your-static-ip>/docs`
+Live: https://juliusablis.duckdns.org/docs
 
 Stack: Node.js 22, Express 5, zod, pino, PM2, NGINX, Ubuntu 24.04 on Lightsail.
 
-Request flow: client → NGINX (port 80, rate limited) → PM2 → Node app on 127.0.0.1:3000
+Request flow: client → NGINX (HTTPS, rate limited) → PM2 → Node app on 127.0.0.1:3000
 
 ## Endpoints
 
@@ -62,7 +62,8 @@ Runs on a Lightsail instance (Ubuntu 24.04) with a static IP:
 
 - Node.js 22 from NodeSource
 - PM2 runs the app from `ecosystem.config.cjs`. `pm2 startup` and `pm2 save` bring it back after a reboot
-- NGINX listens on port 80 and proxies to 127.0.0.1:3000, with per-IP rate limiting
+- NGINX terminates HTTPS and proxies to 127.0.0.1:3000, with per-IP rate limiting. Port 80 redirects to HTTPS
+- Let's Encrypt certificate from certbot, renewed automatically. The domain is a DuckDNS subdomain pointing at the static IP
 - The production `.env` (API key) exists only on the server
 
 To deploy changes, take a Lightsail snapshot first, then:
@@ -76,14 +77,13 @@ pm2 reload node-lightsail-api
 
 ### HTTPS
 
-Point a domain's A record at the static IP, set `server_name` in the NGINX config, then:
+Point the domain at the static IP, set `server_name` in the NGINX config, open port 443 in the Lightsail firewall, then:
 
 ```bash
 sudo apt-get install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d api.example.com
+sudo certbot --nginx -d juliusablis.duckdns.org
+sudo certbot renew --dry-run   # confirms automatic renewal works
 ```
-
-Then remove the `upgradeInsecureRequests: null` override in `src/app.js`.
 
 ## Useful commands
 
